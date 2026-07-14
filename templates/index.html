@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f6f8;
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            padding: 24px 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            color: #0a3d62;
+        }
+        header p {
+            margin: 10px 0 0;
+            color: #555;
+            font-size: 1rem;
+        }
+        .panel {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 300px minmax(0, 1fr);
+            gap: 20px;
+        }
+        .panel h2 {
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        input[type="file"],
+        input[type="date"],
+        button {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #d1d8e0;
+            font-size: 1rem;
+        }
+        button {
+            background: #0a3d62;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-weight: 700;
+        }
+        button:hover {
+            background: #09507b;
+        }
+        .alert {
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #eaf8ef;
+            border: 1px solid #2ecc71;
+            color: #2c7a3b;
+        }
+        .alert-error {
+            background: #fdecea;
+            border: 1px solid #e74c3c;
+            color: #b0292f;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .metric-card {
+            background: #f9fbff;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+        }
+        .metric-card h3 {
+            margin: 0 0 12px;
+            color: #34495e;
+            font-size: 1rem;
+        }
+        .metric-card p {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            table-layout: fixed;
+            word-break: break-word;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e9ef;
+            font-size: 0.95rem;
+            vertical-align: top;
+        }
+        th {
+            background: #fafbfd;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        td {
+            max-width: 220px;
+            white-space: normal;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+        .row-respondido td {
+            background: #d4edda;
+        }
+        .row-no-respondido td {
+            background: #f8d7da;
+        }
+        .row-no-detectado td {
+            background: #fef3cd;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{ title }}</h1>
+            <p>{{ subtitle }}</p>
+        </header>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>1. Subir archivo</h2>
+                {% if error %}
+                    <div class="alert alert-error">{{ error }}</div>
+                {% endif %}
+                {% if success %}
+                    <div class="alert alert-success">{{ success }}</div>
+                {% endif %}
+                <form method="post" action="/procesar" enctype="multipart/form-data">
+                    <label for="file">Archivo CSV o XLSX</label>
+                    <input type="file" id="file" name="file" accept=".csv,.xlsx" required />
+
+                    <label for="fecha_inicio">Fecha de inicio</label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ selected_inicio or min_date }}" min="{{ min_date }}" max="{{ max_date }}" />
+
+                    <label for="fecha_fin">Fecha de fin</label>
+                    <input type="date" id="fecha_fin" name="fecha_fin" value="{{ selected_fin or max_date }}" min="{{ min_date }}" max="{{ max_date }}" />
+
+                    <button type="submit">Procesar archivo</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>2. Instrucciones</h2>
+                <p>1. Sube tu archivo Excel o CSV.</p>
+                <p>2. Selecciona el rango de fechas si es necesario.</p>
+                <p>3. Revisa los resultados y la tabla coloreada.</p>
+                <hr />
+                <p>Este panel clasifica los trámites según si existe número de oficio en la columna <strong>NUMERO DE OFICIO ORE GUARICO</strong>. Si la celda tiene datos, se considera respondido.</p>
+            </div>
+        </div>
+
+        {% if table_headers %}
+            <div class="panel">
+                <h2>Resultados</h2>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <h3>Total de solicitudes</h3>
+                        <p>{{ total }}</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Respondidos</h3>
+                        <p>{{ respondidos }}</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>No respondidos</h3>
+                        <p>{{ no_respondidos }}</p>
+                    </div>
+                </div>
+
+                {% if no_detectado > 0 %}
+                    <div class="alert alert-error" style="margin-top: 20px;">Hay {{ no_detectado }} filas sin columna de oficio detectable.</div>
+                {% endif %}
+
+                <p style="margin-top: 20px;">Fechas procesadas: {{ fecha_inicio }} a {{ fecha_fin }}</p>
+                <p>Columnas detectadas: {{ columns }}</p>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for header in table_headers %}
+                                    <th>{{ header }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in range(table_rows|length) %}
+                                <tr class="{{ row_classes[i] }}">
+                                    {% for item in table_rows[i] %}
+                                        <td>{{ item }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="footer">
+            <p>Hecho con Python + Flask.</p>
+        </div>
+    </div>
+</body>
+</html>
