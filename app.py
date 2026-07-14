@@ -131,7 +131,8 @@ def procesar():
         if filename.endswith('.csv'):
             df = pd.read_csv(uploaded_file, skiprows=2)
         else:
-            df = pd.read_excel(uploaded_file, skiprows=2)
+            # CAMBIO AQUÍ: Forzamos la lectura específica de la pestaña de requerimientos del 2026
+            df = pd.read_excel(uploaded_file, sheet_name='2026 SOLICITUDES DEL TRIBUNAL Y MP', skiprows=2)
 
         df = clean_columns(df)
         fecha_columna = find_fecha_col(df.columns)
@@ -166,12 +167,10 @@ def procesar():
         else:
             df_filtrado['Estado_Respuesta'] = 'No Detectado'
 
-        # Si el usuario solicitó exportar el archivo excel filtrado
         if is_export:
             visible_cols = [col for col in df_filtrado.columns if not is_hidden_column(col)]
             df_export = df_filtrado[visible_cols].copy()
             
-            # Formatear columnas de fecha para que salgan limpias en Excel
             for col in df_export.columns:
                 if pd.api.types.is_datetime64_any_dtype(df_export[col]):
                     df_export[col] = df_export[col].dt.strftime('%Y-%m-%d')
@@ -236,7 +235,7 @@ def procesar():
             'index.html',
             title='Análisis de Solicitudes 2026',
             subtitle='Carga tu archivo y analiza rápidamente el estado de los trámites por oficio.',
-            error=f'Error al procesar el archivo: {e}',
+            error=f'Error al procesar la pestaña requerida del archivo: {e}',
             min_date=datetime.today().date().replace(month=1, day=1),
             max_date=datetime.today().date().replace(month=12, day=31),
             table_headers=None,
@@ -246,6 +245,5 @@ def procesar():
 
 
 if __name__ == '__main__':
-    # Configuración del puerto dinámico para Render
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
