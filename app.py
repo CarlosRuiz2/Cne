@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 import pandas as pd
 from datetime import datetime
+import os
+import io
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -109,8 +111,9 @@ def procesar():
     uploaded_file = request.files.get('file')
     fecha_inicio = request.form.get('fecha_inicio')
     fecha_fin = request.form.get('fecha_fin')
+    is_export = request.form.get('export') == 'xlsx'
 
-    if uploaded_file is None or uploaded_file.filename == '':
+    if (uploaded_file is None or uploaded_file.filename == '') and not is_export:
         return render_template(
             'index.html',
             title='Análisis de Solicitudes 2026',
@@ -162,6 +165,28 @@ def procesar():
             )
         else:
             df_filtrado['Estado_Respuesta'] = 'No Detectado'
+
+        # Si el usuario solicitó exportar el archivo excel filtrado
+        if is_export:
+            visible_cols = [col for col in df_filtrado.columns if not is_hidden_column(col)]
+            df_export = df_filtrado[visible_cols].copy()
+            
+            # Formatear columnas de fecha para que salgan limpias en Excel
+            for col in df_export.columns:
+                if pd.api.types.is_datetime64_any_dtype(df_export[col]):
+                    df_export[col] = df_export[col].dt.strftime('%Y-%m-%d')
+
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df_export.to_excel(writer, index=False, sheet_name='Resultados')
+            output.seek(0)
+            
+            return send_file(
+                output,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=f"reporte_filtrado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            )
 
         respondidos = int((df_filtrado['Estado_Respuesta'] == 'Respondido').sum())
         no_respondidos = int((df_filtrado['Estado_Respuesta'] == 'No Respondido').sum())
@@ -221,4 +246,6 @@ def procesar():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Configuración del puerto dinámico para Render
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
