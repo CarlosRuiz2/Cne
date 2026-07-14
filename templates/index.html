@@ -59,13 +59,14 @@
             border-radius: 10px;
             border: 1px solid #d1d8e0;
             font-size: 1rem;
+            box-sizing: border-box;
         }
         button {
             background: #0a3d62;
             color: white;
             border: none;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: background 0.2s ease, opacity 0.2s ease;
             font-weight: 700;
         }
         button:hover {
@@ -154,6 +155,12 @@
             color: #7f8c8d;
             font-size: 0.95rem;
         }
+        .actions-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
         @media (max-width: 900px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -180,9 +187,9 @@
                 {% if success %}
                     <div class="alert alert-success">{{ success }}</div>
                 {% endif %}
-                <form method="post" action="/procesar" enctype="multipart/form-data">
+                <form method="post" action="/procesar" enctype="multipart/form-data" id="uploadForm">
                     <label for="file">Archivo CSV o XLSX</label>
-                    <input type="file" id="file" name="file" accept=".csv,.xlsx" required />
+                    <input type="file" id="file" name="file" accept=".csv,.xlsx" {% if not table_headers %}required{% endif %} />
 
                     <label for="fecha_inicio">Fecha de inicio</label>
                     <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ selected_inicio or min_date }}" min="{{ min_date }}" max="{{ max_date }}" />
@@ -190,7 +197,12 @@
                     <label for="fecha_fin">Fecha de fin</label>
                     <input type="date" id="fecha_fin" name="fecha_fin" value="{{ selected_fin or max_date }}" min="{{ min_date }}" max="{{ max_date }}" />
 
-                    <button type="submit">Procesar archivo</button>
+                    <div class="actions-group">
+                        <button type="submit" id="btnProcesar">Procesar archivo</button>
+                        {% if table_headers %}
+                            <button type="submit" name="export" value="xlsx" style="background-color: #27ae60;">Exportar XLSX</button>
+                        {% endif %}
+                    </div>
                 </form>
             </div>
 
@@ -199,7 +211,7 @@
                 <p>1. Sube tu archivo Excel o CSV.</p>
                 <p>2. Selecciona el rango de fechas si es necesario.</p>
                 <p>3. Revisa los resultados y la tabla coloreada.</p>
-                <hr />
+                <hr style="border: 0; border-top: 1px solid #d1d8e0; margin: 15px 0;" />
                 <p>Este panel clasifica los trámites según si existe número de oficio en la columna <strong>NUMERO DE OFICIO ORE GUARICO</strong>. Si la celda tiene datos, se considera respondido.</p>
             </div>
         </div>
@@ -227,7 +239,6 @@
                 {% endif %}
 
                 <p style="margin-top: 20px;">Fechas procesadas: {{ fecha_inicio }} a {{ fecha_fin }}</p>
-                <p>Columnas detectadas: {{ columns }}</p>
 
                 <div class="table-wrapper">
                     <table>
@@ -256,5 +267,17 @@
             <p>Hecho con Python + Flask.</p>
         </div>
     </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const submitter = e.submitter;
+            if (submitter && submitter.value !== 'xlsx') {
+                const btn = document.getElementById('btnProcesar');
+                btn.innerText = 'Procesando archivo...';
+                btn.style.opacity = '0.7';
+                btn.style.pointerEvents = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
