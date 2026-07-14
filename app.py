@@ -131,8 +131,22 @@ def procesar():
         if filename.endswith('.csv'):
             df = pd.read_csv(uploaded_file, skiprows=2)
         else:
-            # CAMBIO AQUÍ: Forzamos la lectura específica de la pestaña de requerimientos del 2026
-            df = pd.read_excel(uploaded_file, sheet_name='2026 SOLICITUDES DEL TRIBUNAL Y MP', skiprows=2)
+            # 1. Cargar el archivo Excel completo en memoria para evaluar sus hojas
+            excel_file = pd.ExcelFile(uploaded_file)
+            
+            # 2. Buscar dinámicamente cualquier pestaña que contenga el texto clave
+            target_sheet = None
+            for sheet in excel_file.sheet_names:
+                if '2026 SOLICITUDES' in sheet.upper():
+                    target_sheet = sheet
+                    break
+            
+            # 3. Si no encuentra ninguna coincidencia válida, lanzar excepción detallada
+            if not target_sheet:
+                raise ValueError("No se encontró ninguna pestaña que contenga '2026 SOLICITUDES' dentro del archivo Excel.")
+                
+            # 4. Leer la pestaña detectada de forma automática
+            df = pd.read_excel(excel_file, sheet_name=target_sheet, skiprows=2)
 
         df = clean_columns(df)
         fecha_columna = find_fecha_col(df.columns)
